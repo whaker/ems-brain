@@ -165,14 +165,10 @@ public class EnergyFeedForwardProcessor {
         double[] inputs = new double[analysisDataList.size()];
         double[] outputs = new double[analysisDataList.size()];
 
-
         for (int index = 0; index < analysisDataList.size(); index++) {
             inputs[index] = analysisDataList.get(index).getInputValue();
             outputs[index] = analysisDataList.get(index).getOutputValue();
-            logger.info("{}, {}", inputs[index], outputs[index]);
         }
-
-        logger.info("size : {}, {}", inputs.length, outputs.length);
 
         INDArray inputNDArray = Nd4j.create(inputs, new int[]{inputs.length, 1});
         INDArray outputNDArray = Nd4j.create(outputs, new int[]{outputs.length, 1});
