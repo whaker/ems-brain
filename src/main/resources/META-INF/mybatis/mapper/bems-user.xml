@@ -1,0 +1,18 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BemsUserMapper">
+
+	<select id="findAllByBuildingBlockIdx" resultType="BemsUser">
+    <![CDATA[
+        SELECT  LOGIN AS userName,
+                ACTIVATED AS activated,
+                LANG_KEY AS language,
+                BUILDING_IDX AS buildingIdx,
+                UBB.BUILDING_BLOCK_IDX AS buildingBlockIdx
+        FROM EMS_USER AS U, EMS_USER_BUILDING_BLOCK AS UBB
+        WHERE U.ID = UBB.USER_ID
+        AND UBB.PUSH_FLAG = 'Y'
+        AND UBB.BUILDING_BLOCK_IDX = ${buildingBlockIdx};
+	]]>
+	</select>
+
+</mapper>

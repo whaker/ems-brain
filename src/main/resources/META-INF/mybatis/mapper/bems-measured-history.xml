@@ -1,0 +1,47 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BemsMeasuredHistoryMapper">
+	<insert id="save">
+	<![CDATA[
+		INSERT INTO POINT_MEASURED_HISTORY_#{buildingIdx} (
+			MEASURED_DATE,
+			MEASURED_TIME, 
+			POIT_LIST_IX,
+			POINT_VALUE, 
+			POINT_CHANGE_VALUE)
+		VALUES (
+			#{history.date}, 
+			#{history.time},
+			#{history.pointIdx},
+			#{history.pointValue},
+			#{history.pointChangeValue})
+	]]>
+	</insert>
+
+	<select id="findAllByBuildingIdx" resultType="BemsMeasuredHistory">
+		<![CDATA[
+			SELECT	PMHB.POIT_LIST_IX as pointIdx,
+					PMHB.MEASURED_DATE as date,
+					SUBSTRING(PMHB.MEASURED_TIME,1,4) as time,
+					PMHB.POINT_VALUE as pointValue,
+					PMHB.POINT_CHANGE_VALUE as pointChangeValue
+			FROM (
+				SELECT	POIT_LIST_IX,
+						MAX(CONCAT(MEASURED_DATE,MEASURED_TIME)) AS CDATE
+				FROM POINT_MEASURED_HISTORY_#{buildingIdx}
+				GROUP BY POIT_LIST_IX
+				) PMHA
+			INNER JOIN (
+				SELECT	POIT_LIST_IX,
+						CONCAT(MEASURED_DATE,MEASURED_TIME) AS CDATE,
+						MEASURED_DATE,
+						MEASURED_TIME,
+						POINT_VALUE,
+						POINT_CHANGE_VALUE
+				FROM POINT_MEASURED_HISTORY_#{buildingIdx}
+				) PMHB
+			ON PMHA.POIT_LIST_IX=PMHB.POIT_LIST_IX
+			AND PMHA.CDATE = PMHB.CDATE
+			ORDER BY PMHB.POIT_LIST_IX
+		]]>
+	</select>
+</mapper>

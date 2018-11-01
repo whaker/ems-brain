@@ -1,0 +1,84 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.statistics.EnergyRealStatisticsMapper">
+	<update id="createTable">
+	<![CDATA[
+        CREATE TABLE IF NOT EXISTS `STATISTICS_ENERGY_R_${buildingIdx}` (
+          `DATE` char(8) NOT NULL COMMENT '통계일자',
+          `TIME` char(4) NOT NULL COMMENT '통계시간',
+          `ENEG_SYSTEM_MASTER_IX` bigint(20) unsigned NOT NULL COMMENT '에너지계통 시퀀스',
+          `ENERGY_VALUE` decimal(20,5) NOT NULL DEFAULT '0.00000' COMMENT '에너지 측정값',
+          `EXT_INPUT_FLAG` char(1) NOT NULL DEFAULT 'N' COMMENT '외부입력 여부',
+          `CREATE_ID` varchar(12) NOT NULL COMMENT '생성ID',
+          `CREATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성날짜',
+          `UPDATE_ID` varchar(12) DEFAULT NULL COMMENT '변경ID',
+          `UPDATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '변경날짜',
+          PRIMARY KEY (`ENEG_SYSTEM_MASTER_IX`,`DATE`,`TIME`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='에너지 실시간통계_#빌딩정보 시퀀스#';
+	]]>
+	</update>
+
+	<insert id="save">
+	<![CDATA[
+        INSERT INTO STATISTICS_ENERGY_R_${buildingIdx} (
+            DATE,
+            TIME,
+            ENEG_SYSTEM_MASTER_IX,
+            ENERGY_VALUE,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+            (SELECT SPR.DATE,
+                    SPR.TIME,
+                    REP.ENEG_SYSTEM_MASTER_IX,
+                    SUM((CASE WHEN PL.POINT_VALUE_TYPE_CD = '01'
+                        THEN IFNULL(SPR.POINT_VALUE,0.0)
+                        ELSE IFNULL(SPR.POINT_CHANGE_VALUE,0.0)
+                        END) * IFNULL(ESM.FORMULA, 1.0)) AS SUM_VALUE,
+                    'N',
+                    'SYSTEM'
+            FROM STATISTICS_POINT_R_${buildingIdx} SPR, ENERGY_POINT_MAPPING REP,
+            POINT PL, ENERGY ESM
+            WHERE REP.POIT_LIST_IX = SPR.POIT_LIST_IX
+            AND REP.POIT_LIST_IX = PL.POIT_LIST_IX
+            AND REP.ENEG_SYSTEM_MASTER_IX = ESM.ENEG_SYSTEM_MASTER_IX
+            AND ESM.P_ENEG_SYSTEM_MASTER_IX is not null
+            AND SPR.DATE = '${date}' AND SPR.TIME = '${time}'
+            GROUP BY SPR.DATE, SPR.TIME, REP.ENEG_SYSTEM_MASTER_IX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ENERGY_VALUE = NEW.SUM_VALUE
+	]]>
+	</insert>
+
+	<insert id="saveForParent">
+	<![CDATA[
+       INSERT INTO STATISTICS_ENERGY_R_${buildingIdx} (
+            DATE,
+            TIME,
+            ENEG_SYSTEM_MASTER_IX,
+            ENERGY_VALUE,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+            (SELECT SPR.DATE,
+                    SPR.TIME,
+                    ESM.P_ENEG_SYSTEM_MASTER_IX,
+                    SUM((CASE WHEN PL.POINT_VALUE_TYPE_CD = '01'
+                        THEN IFNULL(SPR.POINT_VALUE,0.0)
+                        ELSE IFNULL(SPR.POINT_CHANGE_VALUE,0.0)
+                        END) * IFNULL(ESM.FORMULA, 1.0)) AS SUM_VALUE,
+                    'N',
+                    'SYSTEM'
+            FROM STATISTICS_POINT_R_${buildingIdx} SPR, ENERGY_POINT_MAPPING REP,
+            POINT PL, ENERGY ESM
+            WHERE REP.POIT_LIST_IX = SPR.POIT_LIST_IX
+            AND REP.POIT_LIST_IX = PL.POIT_LIST_IX
+            AND REP.ENEG_SYSTEM_MASTER_IX = ESM.ENEG_SYSTEM_MASTER_IX
+            AND SPR.DATE = '${date}' AND SPR.TIME = '${time}'
+            AND ESM.P_ENEG_SYSTEM_MASTER_IX is not null
+            GROUP BY SPR.DATE, SPR.TIME, ESM.P_ENEG_SYSTEM_MASTER_IX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ENERGY_VALUE = NEW.SUM_VALUE
+	]]>
+	</insert>
+
+</mapper>

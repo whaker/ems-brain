@@ -1,0 +1,147 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.statistics.PerformanceAnalysisPeriodStatisticsMapper">
+	<update id="createTable">
+	<![CDATA[
+        CREATE TABLE IF NOT EXISTS `STATISTICS_ANALYSIS_P_${buildingIdx}` (
+          `DATE` char(8) NOT NULL COMMENT '통계일자',
+          `TIME` char(4) NOT NULL COMMENT '통계시간',
+          `PERIOD_TYPE_CD` varchar(15) NOT NULL COMMENT '기간형태 코드',
+          `FACT_MASTER_IX` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT '설비정보 시퀀스',
+          `PERFORMANCE_IDX` bigint(20) unsigned NOT NULL COMMENT '설비성능정보 시퀀스',
+          `ANALY_SUM` decimal(20,5) NOT NULL DEFAULT '0.00000' COMMENT '성능 합산값',
+          `ANALY_AVG` decimal(20,5) NOT NULL DEFAULT '0.00000' COMMENT '설비 평균값',
+          `EXT_INPUT_FLAG` char(1) NOT NULL DEFAULT 'N' COMMENT '외부입력 여부',
+          `CREATE_ID` varchar(12) NOT NULL COMMENT '생성ID',
+          `CREATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성날짜',
+          `UPDATE_ID` varchar(12) DEFAULT NULL COMMENT '변경ID',
+          `UPDATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '변경날짜',
+          PRIMARY KEY (`PERFORMANCE_IDX`,`FACT_MASTER_IX`,`PERIOD_TYPE_CD`,`DATE`,`TIME`),
+          KEY `R_98` (`FACT_MASTER_IX`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='설비성능 기간통계_#빌딩정보 시퀀스#';
+	]]>
+	</update>
+
+	<insert id="saveForHour">
+	<![CDATA[
+        INSERT INTO STATISTICS_ANALYSIS_P_${buildingIdx} (
+            DATE,
+            TIME,
+            PERIOD_TYPE_CD,
+            FACT_MASTER_IX,
+            PERFORMANCE_IDX,
+            ANALY_SUM,
+            ANALY_AVG,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+        	(SELECT DATE,
+                CONCAT(SUBSTR(TIME,1,2),'00'),
+                'H',
+                FACT_MASTER_IX,
+                PERFORMANCE_IDX,
+                SUM(ANALY_VALUE) AS ANALY_SUM,
+                AVG(ANALY_VALUE) AS ANALY_AVG,
+                'N',
+                'SYSTEM'
+            FROM STATISTICS_ANALYSIS_R_${buildingIdx}
+            WHERE DATE = '${date}' AND SUBSTR(TIME,1,2) = SUBSTR('${time}',1,2)
+            GROUP BY FACT_MASTER_IX, PERFORMANCE_IDX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_SUM = NEW.ANALY_SUM,
+            ANALY_AVG = NEW.ANALY_AVG
+	]]>
+	</insert>
+
+	<insert id="saveForDay">
+	<![CDATA[
+	   INSERT INTO STATISTICS_ANALYSIS_P_${buildingIdx} (
+            DATE,
+            TIME,
+            PERIOD_TYPE_CD,
+            FACT_MASTER_IX,
+            PERFORMANCE_IDX,
+            ANALY_SUM,
+            ANALY_AVG,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+        	(SELECT DATE,
+        		'0000',
+                'D',
+                FACT_MASTER_IX,
+                PERFORMANCE_IDX,
+                SUM(ANALY_SUM) AS ANALY_SUM,
+                AVG(ANALY_AVG) AS ANALY_AVG,
+                'N',
+                'SYSTEM'
+            FROM STATISTICS_ANALYSIS_P_${buildingIdx}
+            WHERE DATE = '${date}' AND PERIOD_TYPE_CD = 'H'
+            GROUP BY FACT_MASTER_IX, PERFORMANCE_IDX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_SUM = NEW.ANALY_SUM,
+            ANALY_AVG = NEW.ANALY_AVG
+	]]>
+	</insert>
+
+	<insert id="saveForMonth">
+	<![CDATA[
+		INSERT INTO STATISTICS_ANALYSIS_P_${buildingIdx} (
+            DATE,
+            TIME,
+            PERIOD_TYPE_CD,
+            FACT_MASTER_IX,
+            PERFORMANCE_IDX,
+            ANALY_SUM,
+            ANALY_AVG,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+        	(SELECT CONCAT(SUBSTR(DATE,1,6),'00'),
+        		'0000',
+                'M',
+                FACT_MASTER_IX,
+                PERFORMANCE_IDX,
+                SUM(ANALY_SUM) AS ANALY_SUM,
+                AVG(ANALY_AVG) AS ANALY_AVG,
+                'N',
+                'SYSTEM'
+            FROM STATISTICS_ANALYSIS_P_${buildingIdx}
+            WHERE SUBSTR(DATE,1,6) = SUBSTR('${date}',1,6)  AND PERIOD_TYPE_CD = 'D'
+            GROUP BY FACT_MASTER_IX, PERFORMANCE_IDX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_SUM = NEW.ANALY_SUM,
+            ANALY_AVG = NEW.ANALY_AVG
+	]]>
+	</insert>
+
+	<insert id="saveForYear">
+	<![CDATA[
+		INSERT INTO STATISTICS_ANALYSIS_P_${buildingIdx} (
+            DATE,
+            TIME,
+            PERIOD_TYPE_CD,
+            FACT_MASTER_IX,
+            PERFORMANCE_IDX,
+            ANALY_SUM,
+            ANALY_AVG,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+        	(SELECT CONCAT(SUBSTR(DATE,1,4),'0000'),
+        		'0000',
+                'Y',
+                FACT_MASTER_IX,
+                PERFORMANCE_IDX,
+                SUM(ANALY_SUM) AS ANALY_SUM,
+                AVG(ANALY_AVG) AS ANALY_AVG,
+                'N',
+                'SYSTEM'
+            FROM STATISTICS_ANALYSIS_P_${buildingIdx}
+            WHERE SUBSTR(DATE,1,4) = SUBSTR('$date',1,4)  AND PERIOD_TYPE_CD = 'M'
+            GROUP BY FACT_MASTER_IX, PERFORMANCE_IDX) AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_SUM = NEW.ANALY_SUM,
+            ANALY_AVG = NEW.ANALY_AVG
+	]]>
+	</insert>
+</mapper>

@@ -1,0 +1,42 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BemsDataMapper">
+	<select id="findAllByBuildingIdx" resultType="BemsData">
+    <![CDATA[
+        SELECT B.BUID_MASTER_IX as buildingIdx,
+               B.MASTER_NM as buildingName,
+               BB.BUID_BLOCK_IX as blockIdx,
+               BB.BLOCK_NM as blockName,
+               BF.BUID_FLOOR_IX as floorIdx,
+               BF.FLOOR_NM as floorName,
+               BZ.BUID_ZONE_IX as zoneIdx,
+               BZ.ZONE_NM as zoneName,
+               F.FACT_MASTER_IX as facilityIdx,
+               F.FACILITY_NM as facilityName,
+               F.P_FACILITY_IDX as parentFacilityIdx,
+               P.POINT_GROUP_CODE as pointGroupCode,
+               P.POIT_LIST_IX as pointIdx,
+               P.POINT_NM as pointName,
+               P.POINT_TYPE_CD as pointType,
+               P.POINT_VALUE_TYPE_CD as pointValueType,
+               P.FORMULA as formula,
+               P.VIRTUAL_FLAG as virtualFlag,
+               IFNULL(PT.USE_FLAG, 'N') as traceFlag
+        FROM BUILDING AS B,
+             BUILDING_BLOCK AS BB,
+             BUILDING_FLOOR AS BF,
+             BUILDING_ZONE AS BZ,
+             FACILITY AS F,
+             FACILITY_POINT_MAPPING AS FPM,
+             POINT AS P
+                LEFT JOIN POINT_TRACE PT ON (PT.POINT_IDX = P.POIT_LIST_IX)
+        WHERE B.BUID_MASTER_IX = BB.BUID_MASTER_IX
+        AND BB.BUID_BLOCK_IX = BF.BUID_BLOCK_IX
+        AND BF.BUID_FLOOR_IX = BZ.BUID_FLOOR_IX
+        AND BZ.BUID_ZONE_IX = F.BUID_ZONE_IX
+        AND F.FACT_MASTER_IX = FPM.FACT_MASTER_IX
+        AND FPM.POIT_LIST_IX = P.POIT_LIST_IX
+        AND P.BUID_MASTER_IX = B.BUID_MASTER_IX
+        AND B.BUID_MASTER_IX = #{buildingIdx}
+    ]]>
+	</select>
+</mapper>

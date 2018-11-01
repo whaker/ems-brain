@@ -1,0 +1,138 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.statistics.EnergyAnalysisRealStatisticsMapper">
+	<update id="createTable">
+	<![CDATA[
+        CREATE TABLE IF NOT EXISTS `STATISTICS_ENERGY_ANALYSIS_R_${buildingIdx}` (
+          `DATE` char(8) NOT NULL COMMENT '통계일자',
+          `TIME` char(4) NOT NULL COMMENT '통계시간',
+          `ENEG_SYSTEM_MASTER_IX` bigint(20) unsigned NOT NULL COMMENT '에너지계통 시퀀스',
+          `ENEG_INDICATOR_IX` bigint(20) unsigned NOT NULL COMMENT '에너지지표 시퀀스',
+          `ANALY_VALUE` decimal(20,5) NOT NULL DEFAULT '0.00000' COMMENT '에너지 측정값',
+          `EXT_INPUT_FLAG` char(1) NOT NULL DEFAULT 'N' COMMENT '외부입력 여부',
+          `CREATE_ID` varchar(12) NOT NULL COMMENT '생성ID',
+          `CREATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성날짜',
+          `UPDATE_ID` varchar(12) DEFAULT NULL COMMENT '변경ID',
+          `UPDATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '변경날짜',
+          PRIMARY KEY (`ENEG_SYSTEM_MASTER_IX`,`ENEG_INDICATOR_IX`,`DATE`,`TIME`),
+          KEY `R_48` (`ENEG_INDICATOR_IX`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='에너지지표 실시간통계_#빌딩정보 시퀀스#';
+	]]>
+	</update>
+
+	<insert id="save">
+	<![CDATA[
+        INSERT INTO STATISTICS_ENERGY_ANALYSIS_R_${buildingIdx} (
+            DATE,
+            TIME,
+            ENEG_SYSTEM_MASTER_IX,
+            ENEG_INDICATOR_IX,
+            ANALY_VALUE,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+            (SELECT SER.DATE,
+                SER.TIME,
+                SER.ENEG_SYSTEM_MASTER_IX,
+                EI.ENEG_INDICATOR_IX,
+                (SER.ENERGY_VALUE * IFNULL(EI.CONST_VALUE, 1.000)) AS ANALY_VALUE,
+                'N',
+                'SYSTEM'
+            FROM STATISTICS_ENERGY_R_${buildingIdx} SER,
+                ENERGY ESM,
+                ENERGY_GROUP ESG,
+                ENERGY_SOURCE ES,
+                ENERGY_INDICATOR EI,
+                ENERGY_INDEX EIC
+            WHERE ESM.ENEG_SYSTEM_MASTER_IX = SER.ENEG_SYSTEM_MASTER_IX
+            AND ESG.ENEG_SYSTEM_GROUP_IX = ESM.ENEG_SYSTEM_GROUP_IX
+            AND ES.ENEG_SOURCE_IX = ESG.ENEG_SOURCE_IX
+            AND EI.ENEG_SOURCE_IX = ES.ENEG_SOURCE_IX
+            AND EIC.INDEX_CD = EI.ENERGY_INDEX_CD
+            AND EI.CONSTANT_APPLY_FLAG='Y'
+            AND SER.DATE = '${date}' AND SER.TIME = '${time}') AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_VALUE = NEW.ANALY_VALUE
+	]]>
+	</insert>
+
+    <!-- ENERGY_INDEX_CD == '00005' -->
+	<insert id="savePrice">
+	<![CDATA[
+    	INSERT INTO STATISTICS_ENERGY_ANALYSIS_R_${buildingIdx} (
+            DATE,
+            TIME,
+            ENEG_SYSTEM_MASTER_IX,
+            ENEG_INDICATOR_IX,
+            ANALY_VALUE,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+        SELECT * FROM
+            (SELECT SER.DATE AS DATE,
+                SER.TIME AS TIME,
+                SER.ENEG_SYSTEM_MASTER_IX AS ENEG_SYSTEM_MASTER_IX,
+                EI.ENEG_INDICATOR_IX AS ENEG_INDICATOR_IX,
+                (SER.ENERGY_VALUE * EPUT.PRICE_VALUE) AS ANALY_VALUE,
+                'N' AS EXT_INPUT_FLAG,
+                'SYSTEM' AS CREATE_ID
+            FROM STATISTICS_ENERGY_R_${buildingIdx} SER,
+                ENERGY_INDICATOR EI,
+                ENERGY_SOURCE ES,
+                ENERGY_GROUP EG,
+                ENERGY E,
+                ENERGY_PRICE_UNIT_TABLE EPUT
+            WHERE SER.ENEG_SYSTEM_MASTER_IX = E.ENEG_SYSTEM_MASTER_IX
+            AND E.ENEG_SYSTEM_GROUP_IX = EG.ENEG_SYSTEM_GROUP_IX
+            AND EG.ENEG_SOURCE_IX = ES.ENEG_SOURCE_IX
+            AND ES.ENEG_SOURCE_IX = EI.ENEG_SOURCE_IX
+            AND EI.ENERGY_INDEX_CD = '00005'
+            AND ES.PRICE_IDX = EPUT.PRICE_IDX
+            AND SUBSTR(SER.DATE, 5, 2) BETWEEN EPUT.START_MONTH AND EPUT.END_MONTH
+            AND SUBSTR(SER.TIME, 1, 2) BETWEEN EPUT.START_TIME AND EPUT.END_TIME-1
+            AND SER.DATE = '${date}' AND SER.TIME = '${time}') AS NEW
+         ON DUPLICATE KEY UPDATE
+            ANALY_VALUE = NEW.ANALY_VALUE
+	]]>
+	</insert>
+
+    <!-- ENERGY_INDEX_CD == '00006' -->
+    <insert id="savePerArea">
+    <![CDATA[
+    	INSERT INTO STATISTICS_ENERGY_ANALYSIS_R_${buildingIdx} (
+            DATE,
+            TIME,
+            ENEG_SYSTEM_MASTER_IX,
+            ENEG_INDICATOR_IX,
+            ANALY_VALUE,
+            EXT_INPUT_FLAG,
+            CREATE_ID)
+ 		SELECT * FROM
+            (SELECT SER.DATE AS DATE,
+                SER.TIME AS TIME,
+                SER.ENEG_SYSTEM_MASTER_IX AS ENEG_SYSTEM_MASTER_IX,
+                EI.ENEG_INDICATOR_IX AS ENEG_INDICATOR_IX,
+                ((SER.ENERGY_VALUE * EI.CONST_VALUE) / IFNULL(BB.TOTAL_AREA, 1)) AS ANALY_VALUE,
+                'N' AS EXT_INPUT_FLAG,
+                'SYSTEM' AS CREATE_ID
+            FROM STATISTICS_ENERGY_R_${buildingIdx} SER,
+                ENERGY_INDICATOR EI,
+                ENERGY_SOURCE ES,
+                ENERGY_GROUP EG,
+                ENERGY E,
+                ENERGY_PRICE_UNIT_TABLE EPUT,
+                BUILDING_BLOCK BB
+            WHERE SER.ENEG_SYSTEM_MASTER_IX = E.ENEG_SYSTEM_MASTER_IX
+            AND E.ENEG_SYSTEM_GROUP_IX = EG.ENEG_SYSTEM_GROUP_IX
+            AND EG.ENEG_SOURCE_IX = ES.ENEG_SOURCE_IX
+            AND ES.ENEG_SOURCE_IX = EI.ENEG_SOURCE_IX
+            AND EI.ENERGY_INDEX_CD = '00006'
+            AND ES.PRICE_IDX = EPUT.PRICE_IDX
+            AND ES.BUID_BLOCK_IX = BB.BUID_BLOCK_IX
+            AND SUBSTR(SER.DATE, 5, 2) BETWEEN EPUT.START_MONTH AND EPUT.END_MONTH
+            AND SUBSTR(SER.TIME, 1, 2) BETWEEN EPUT.START_TIME AND EPUT.END_TIME-1
+            AND SER.DATE = '${date}' AND SER.TIME = '${time}') AS NEW
+        ON DUPLICATE KEY UPDATE
+            ANALY_VALUE = NEW.ANALY_VALUE
+	]]>
+	</insert>
+
+</mapper>

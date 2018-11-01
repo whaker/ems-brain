@@ -1,0 +1,25 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BuildingMapper">
+
+	<select id="findAll" resultType="Building">
+	<![CDATA[
+		SELECT 	BUID_MASTER_IX AS buildingIdx,
+				MASTER_NM AS buildingName,
+				P_BUILDING_IDX AS parentBuildingIdx
+		FROM BUILDING
+		ORDER BY BUID_MASTER_IX
+	]]>
+	</select>
+
+	<select id="findAllByCategoryType" resultType="Building">
+		<![CDATA[
+		SELECT 	BUID_MASTER_IX AS buildingIdx,
+				MASTER_NM AS buildingName,
+				P_BUILDING_IDX AS parentBuildingIdx
+		FROM BUILDING
+		WHERE CATEGORY_TYPE_CD = #{categoryType}
+		ORDER BY BUID_MASTER_IX
+	]]>
+	</select>
+	
+</mapper>

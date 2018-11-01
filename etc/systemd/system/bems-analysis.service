@@ -1,0 +1,14 @@
+[Unit]
+Description=BEMS Analysis
+After=syslog.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bems/ems-package/iroot/ems-analysis
+ExecStart=/bin/java -jar /home/bems/ems-package/iroot/ems-analysis/ems-analysis-1.7.1.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

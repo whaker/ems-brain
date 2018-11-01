@@ -1,0 +1,27 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BemsPerformanceMapper">
+
+	<select id="findAllForPerformance" resultType="PerformanceInformation">
+		<![CDATA[
+		SELECT BB.BUID_MASTER_IX as buildingIdx,
+            FM.FACT_MASTER_IX as facilityIdx,
+            FM.FACILITY_NM as facilityName,
+            P.PERFORMANCE_IDX as performanceIdx,
+            P.PERFORMANCE_NAME as performanceName,
+            PF.CLASS_TYPE as classType,
+            IFNULL(PF.FORMULA, '') as formula
+        FROM PERFORMANCE P,
+            PERFORMANCE_FORMULA PF,
+            FACILITY FM,
+            BUILDING_BLOCK BB
+        WHERE P.PERFORMANCE_IDX = PF.PERFORMANCE_IDX
+        AND P.FACILITY_GROUP_CD = FM.FACILITY_GROUP_CD
+        AND FM.CLASS_TYPE = PF.CLASS_TYPE
+        AND FM.BUID_BLOCK_IX = BB.BUID_BLOCK_IX
+        AND BB.BUID_MASTER_IX = ${buildingIdx}
+        AND P.USE_FLAG = 'Y'
+        ORDER BY BB.BUID_MASTER_IX, FM.FACT_MASTER_IX, P.PERFORMANCE_IDX ASC
+	]]>
+	</select>
+
+</mapper>

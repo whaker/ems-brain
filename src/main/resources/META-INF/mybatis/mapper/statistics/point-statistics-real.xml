@@ -1,0 +1,74 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.statistics.PointRealStatisticsMapper">
+	<update id="createTable">
+	<![CDATA[
+		CREATE TABLE IF NOT EXISTS `STATISTICS_POINT_R_${buildingIdx}` (
+		  `DATE` char(8) NOT NULL COMMENT '통계일자',
+		  `TIME` char(4) NOT NULL COMMENT '통계시간',
+		  `POIT_LIST_IX` bigint(20) unsigned NOT NULL COMMENT '포인트정보 시퀀스',
+		  `POINT_VALUE` decimal(20,5) DEFAULT NULL COMMENT '포인트 측정값',
+		  `POINT_CHANGE_VALUE` decimal(20,5) NOT NULL DEFAULT '0.00000' COMMENT '포인트 변화값',
+		  `EXT_INPUT_FLAG` char(1) NOT NULL DEFAULT 'N' COMMENT '외부입력 여부',
+		  `CREATE_ID` varchar(12) DEFAULT '' COMMENT '생성ID',
+		  `CREATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성날짜',
+		  `UPDATE_ID` varchar(12) DEFAULT NULL COMMENT '변경ID',
+		  `UPDATE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '변경날짜',
+		  PRIMARY KEY (`POIT_LIST_IX`,`DATE`,`TIME`)
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='포인트 실시간통계_#빌딩정보 시퀀스#';
+	]]>
+	</update>
+
+	<select id="findAllByLastDateTime" resultType="PointRealStatistic">
+		<![CDATA[
+			SELECT	POIT_LIST_IX as pointIdx,
+					DATE as date,
+					TIME as time,
+					POINT_VALUE as pointValue,
+					POINT_CHANGE_VALUE as pointChangeValue
+			FROM STATISTICS_POINT_R_#{buildingIdx}
+			WHERE  CONCAT(DATE,TIME) = (
+				SELECT MAX(CONCAT(DATE,TIME))
+				FROM STATISTICS_POINT_R_#{buildingIdx}
+				WHERE CONCAT(DATE,TIME) < CONCAT(#{date}, #{time})
+				);
+		]]>
+	</select>
+
+	<select id="findAllByDateTime" resultType="PointRealStatistic">
+		<![CDATA[
+			SELECT	POIT_LIST_IX as pointIdx,
+					DATE as date,
+					TIME as time,
+					POINT_VALUE as pointValue,
+					POINT_CHANGE_VALUE as pointChangeValue
+			FROM STATISTICS_POINT_R_#{buildingIdx}
+			WHERE DATE = ${date} AND TIME = ${time}
+		]]>
+	</select>
+
+	<insert id="save">
+		<![CDATA[
+			INSERT INTO STATISTICS_POINT_R_${buildingIdx} (
+				DATE,
+				TIME,
+				POIT_LIST_IX,
+				POINT_VALUE,
+				POINT_CHANGE_VALUE,
+				EXT_INPUT_FLAG,
+				CREATE_ID)
+			VALUES (
+				#{statistic.date},
+				#{statistic.time},
+				#{statistic.pointIdx},
+				#{statistic.pointValue},
+				#{statistic.pointChangeValue},
+				'N',
+				'SYSTEM')
+			ON DUPLICATE KEY UPDATE
+				POINT_VALUE = #{statistic.pointValue},
+				POINT_CHANGE_VALUE = #{statistic.pointChangeValue}
+	]]>
+	</insert>
+
+
+</mapper>

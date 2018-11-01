@@ -1,0 +1,14 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.BemsMeasuredDataMapper">
+	<select id="findAllByBuildingIdx" resultType="BemsMeasuredData">
+	<![CDATA[
+		SELECT	POINT_IDX as pointIdx,
+				MEASURED_DATE as date,
+				SUBSTRING(MEASURED_TIME,1,4) as time,
+				POINT_VALUE as pointValue,
+				POINT_CHANGE_VALUE as pointChangeValue
+		FROM POINT_MEASURED_DATA_#{buildingIdx}
+		ORDER BY POINT_IDX ASC;
+	]]>
+	</select>
+</mapper>
