@@ -1,5 +1,6 @@
 package com.identity.ems.tasks;
 
+import com.identity.ems.processor.BemsBrainProcessor;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,11 @@ public class BemsBrainTask {
 	@Autowired
 	int calendarAddMinute;
 
-	@Scheduled(cron = "${ems.application.cron.expression.real-statistics}")
-	public void runForRealStatistics() {
+	@Autowired
+	BemsBrainProcessor bemsBrainProcessor;
+
+	@Scheduled(cron = "${ems.application.cron.expression.real-analysis}")
+	public void runForReal() {
 		Calendar cal = Calendar.getInstance();
 		if (calendarAddMinute != 0) {
 			cal.add(Calendar.MINUTE, calendarAddMinute);
@@ -32,6 +36,6 @@ public class BemsBrainTask {
 		cal.set(Calendar.MINUTE, minute - (minute % 15));
 
 		logger.info("Run real statistics. date : {}, time : {}", dateFormat.format(cal.getTime()), timeFormat.format(cal.getTime()));
-
+		bemsBrainProcessor.run(dateFormat.format(cal.getTime()), timeFormat.format(cal.getTime()), "R");
 	}
 }

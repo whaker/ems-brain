@@ -1,0 +1,21 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.identity.ems.mapper.statistics.RealEnergyStatisticsWithPointMapper">
+
+    <select id="findAllByEnergyIdxAndPointTypeCode" resultType="BemsEnergyAnalysisData">
+    <![CDATA[
+        SELECT  CONCAT(SER.DATE, SER.TIME) AS date,
+            (CASE WHEN P.POINT_VALUE_TYPE_CD = '01'
+             THEN IFNULL(SPR.POINT_VALUE,0.0)
+             ELSE IFNULL(SPR.POINT_CHANGE_VALUE,0.0)
+             END) AS inputValue,
+            SER.ENERGY_VALUE AS outputValue
+        FROM STATISTICS_ENERGY_R_${buildingIdx} SER, STATISTICS_POINT_R_1 SPR, POINT P
+        WHERE SER.DATE = SPR.DATE
+        AND SER.TIME = SPR.TIME
+        AND SPR.POIT_LIST_IX = P.POIT_LIST_IX
+        AND P.POINT_TYPE_CD = #{pointTypeCode}
+        AND SER.ENEG_SYSTEM_MASTER_IX = #{energyIdx}
+	]]>
+    </select>
+
+</mapper>

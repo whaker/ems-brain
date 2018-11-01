@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Rollback
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = BemsAnalysisApplication.class)
+@SpringApplicationConfiguration(classes = BemsBrainApplication.class)
 abstract public class AbstractTestableContext {
 	
 }

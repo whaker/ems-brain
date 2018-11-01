@@ -56,8 +56,8 @@
 	<!-- Send logs to both console and file audit -->
 	<logger name="com.identity.ems" level="info"
 		additivity="false">
-		<appender-ref ref="FILE-AUDIT" />
-	 	<!--<appender-ref ref="STDOUT" />-->
+		<!--<appender-ref ref="FILE-AUDIT" />-->
+	 	<appender-ref ref="STDOUT" />
 	</logger>
 
 	<root level="warn">
