@@ -1,7 +1,6 @@
 
 package com.identity.ems.processor.deeplearning;
 
-import com.identity.ems.domain.BemsEnergyAnalysisData;
 import com.identity.ems.domain.Building;
 import com.identity.ems.mapper.BuildingMapper;
 import com.identity.ems.service.deeplearning.EnergyFeedForwardService;
@@ -11,31 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
-
-import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-import org.deeplearning4j.util.ModelSerializer;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.learning.config.Nesterovs;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Random;
 
 @Service
 public class EnergyFeedForwardProcessor {
@@ -52,24 +29,24 @@ public class EnergyFeedForwardProcessor {
 
 	public void runByBuilding(Building building) throws IOException {
 	    // 전기
-
+        BigInteger powerEnergyIdx = BigInteger.valueOf(101001001);
         energyFeedForwardService.run(
                 realEnergyStatisticsWithPointService.getAll(
                         building.getBuildingIdx(),
-                        BigInteger.valueOf(101001001),
+                        powerEnergyIdx,
                         "PT_OA_ALL"),
-                "PowerMultiNetworkFile.zip"
+                "MultiNetworkFile_" + String.valueOf(powerEnergyIdx) +".zip"
         );
 
         // 가스
+        BigInteger gasEnergyIdx = BigInteger.valueOf(102001001);
         energyFeedForwardService.run(
                 realEnergyStatisticsWithPointService.getAll(
                         building.getBuildingIdx(),
-                        BigInteger.valueOf(102001001),
+                        gasEnergyIdx,
                         "PT_OA_ALL"),
-                "GasMultiNetworkFile.zip"
+                "MultiNetworkFile_" + String.valueOf(gasEnergyIdx) +".zip"
         );
-
     }
 
     public void run(String date, String time) {

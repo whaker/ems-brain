@@ -1,7 +1,13 @@
 package com.identity.ems.service.deeplearning;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 import com.identity.ems.domain.BemsEnergyAnalysisData;
-import com.identity.ems.domain.Building;
+
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -14,6 +20,7 @@ import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
@@ -22,13 +29,6 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 
 @Service
 public class EnergyFeedForwardService {
@@ -44,7 +44,7 @@ public class EnergyFeedForwardService {
 
 	//Network learning rate
 	private final double learningRate = 0.01;
-	private final String multiLayerNetworkFilepath = "../shared/EnergyMultiLayerNetwork.zip";
+	private final String multiLayerNetworkDir= "../shared/deep-learning/";
 
 	public final int numInputs = 1;
 	public final int numOutputs = 1;
@@ -96,10 +96,10 @@ public class EnergyFeedForwardService {
 				.pretrain(false).backprop(true).build();
 	}
 
-	private MultiLayerNetwork createMultiLayerNetwork() throws IOException {
-		File multiLayerNetworkFile = new File(multiLayerNetworkFilepath);
+	private MultiLayerNetwork createMultiLayerNetwork(String filepath) throws IOException {
+		File multiLayerNetworkFile = new File(filepath);
 		if (multiLayerNetworkFile.isFile()) {
-			logger.info("Restored MultiLayerNetwork: " + multiLayerNetworkFilepath);
+			logger.info("Restored MultiLayerNetwork: " + filepath);
 			return ModelSerializer.restoreMultiLayerNetwork(multiLayerNetworkFile);
 		}
 
@@ -112,7 +112,7 @@ public class EnergyFeedForwardService {
 		ModelSerializer.writeModel(net, multiLayerNetworkFile, saveUpdater);
 	}
 
-	public MultiLayerNetwork restoreMutilLayerNetwork(String filePath) throws IOException {
+	public MultiLayerNetwork restoreMultiLayerNetwork(String filePath) throws IOException {
 		File multiLayerNetworkFile = new File(filePath);
 		return ModelSerializer.restoreMultiLayerNetwork(multiLayerNetworkFile);
 	}
@@ -139,28 +139,27 @@ public class EnergyFeedForwardService {
 
 	private void testMultiLayerNetwork(String filePath) {
 		try {
-			MultiLayerNetwork net = restoreMutilLayerNetwork(filePath);
-			logger.info("MultiNetwork Output : " + net.output(Nd4j.create(
-					new double[]{0.3353434, 1.35343, 0.11423, 1.252325, 0.15235, 3.53434 }, new int[]{6, 1}), false)
-			);
+			MultiLayerNetwork net = restoreMultiLayerNetwork(filePath);
+			INDArray array = net.output(Nd4j.create(
+					new double[]{ 0.3353434, 1.35343, 0.11423, 1.252325, 0.15235, 3.53434 },
+					new int[]{ 6, 1 }), false);
+			logger.info("MultiNetwork Output : " + array);
+			logger.info("MultiNetwork Output[0]: " + array.getDouble(0));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void run(List<BemsEnergyAnalysisData> analysisDataList, String filename) throws IOException {
-		String filePath = "../shared/" + filename;
-
 	    if (analysisDataList == null) {
 			logger.info("Analysis data is null");
 			return;
 		}
 
+		String filePath = multiLayerNetworkDir + filename;
 		DataSetIterator dataIterator = getTrainingData(analysisDataList);
-		if (dataIterator == null)
-			return;
 
-		final MultiLayerNetwork net = createMultiLayerNetwork();
+		final MultiLayerNetwork net = createMultiLayerNetwork(filePath);
 		net.init();
 		net.setListeners(new ScoreIterationListener(1));
 

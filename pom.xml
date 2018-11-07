@@ -106,6 +106,7 @@
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.nd4j</groupId>
 			<artifactId>${nd4j.backend}</artifactId>
