@@ -141,9 +141,20 @@ public class EnergyFeedForwardService {
 		try {
 			MultiLayerNetwork net = restoreMultiLayerNetwork(filePath);
 			INDArray array = net.output(Nd4j.create(
-					new double[]{ 0.3353434, 1.35343, 0.11423, 1.252325, 0.15235, 3.53434 },
-					new int[]{ 6, 1 }), false);
-			logger.info("MultiNetwork Output : " + array);
+					new double[]{ 0.3353434 },
+					new int[]{ 1, 1 }), false);
+			logger.info("MultiNetwork Output[0]: " + array.getDouble(0));
+			array = net.output(Nd4j.create(
+					new double[]{ 1.3534334 },
+					new int[]{ 1, 1 }), false);
+			logger.info("MultiNetwork Output[0]: " + array.getDouble(0));
+			array = net.output(Nd4j.create(
+					new double[]{ 0.11423 },
+					new int[]{ 1, 1 }), false);
+			logger.info("MultiNetwork Output[0]: " + array.getDouble(0));
+			array = net.output(Nd4j.create(
+					new double[]{ 1.252325 },
+					new int[]{ 1, 1 }), false);
 			logger.info("MultiNetwork Output[0]: " + array.getDouble(0));
 		} catch (IOException e) {
 			e.printStackTrace();
