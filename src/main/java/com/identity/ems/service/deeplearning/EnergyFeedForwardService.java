@@ -40,9 +40,7 @@ public class EnergyFeedForwardService {
 	private final int nEpochs = 200;
 
 	// each epoch has nSamples/batchSize parameter updates
-	private final int batchSize = 100;
-
-	private final int nSamples = 1000;
+	private int batchSize = 100;
 
 	//Network learning rate
 	private final double learningRate = 0.01;
@@ -50,6 +48,14 @@ public class EnergyFeedForwardService {
 
 	public final int numInputs = 1;
 	public final int numOutputs = 1;
+
+	public void setBatchSize(int size) {
+		this.batchSize = size;
+	}
+
+	public int getBatchSize() {
+		return this.batchSize;
+	}
 
 	private MultiLayerConfiguration getDeepDenseLayerNetworkConfiguration2() {
 		final int numHiddenNodes = 10;
@@ -100,24 +106,18 @@ public class EnergyFeedForwardService {
 		return new MultiLayerNetwork(getDeepDenseLayerNetworkConfiguration());
 	}
 
-	private void saveMultiLayerNetwork(MultiLayerNetwork net) throws IOException {
-		File multiLayerNetworkFile = new File(multiLayerNetworkFilepath);
+	public void saveMultiLayerNetwork(MultiLayerNetwork net, String filePath) throws IOException {
+		File multiLayerNetworkFile = new File(filePath);
 		boolean saveUpdater = true;
 		ModelSerializer.writeModel(net, multiLayerNetworkFile, saveUpdater);
 	}
 
-	private MultiLayerNetwork restoreMutilLayerNetwork() throws IOException {
-		File multiLayerNetworkFile = new File(multiLayerNetworkFilepath);
+	public MultiLayerNetwork restoreMutilLayerNetwork(String filePath) throws IOException {
+		File multiLayerNetworkFile = new File(filePath);
 		return ModelSerializer.restoreMultiLayerNetwork(multiLayerNetworkFile);
 	}
 
-	private DataSetIterator getTrainingData(int batchSize, Building building) {
-		List<BemsEnergyAnalysisData> analysisDataList = realEnergyStatisticsWithPointService.getAll(building.getBuildingIdx(), BigInteger.valueOf(101001001), "PT_OA_ALL");
-		if (analysisDataList == null) {
-			logger.info("Training data is null");
-			return null;
-		}
-
+	private DataSetIterator getTrainingData(List<BemsEnergyAnalysisData> analysisDataList) {
 		double[] inputs = new double[analysisDataList.size()];
 		double[] outputs = new double[analysisDataList.size()];
 
@@ -137,9 +137,27 @@ public class EnergyFeedForwardService {
 		return new ListDataSetIterator(listDs, batchSize);
 	}
 
-	public void run(Building building) throws IOException {
-		DataSetIterator iterator = getTrainingData(batchSize, building);
-		if (iterator == null)
+	private void testMultiLayerNetwork(String filePath) {
+		try {
+			MultiLayerNetwork net = restoreMutilLayerNetwork(filePath);
+			logger.info("MultiNetwork Output : " + net.output(Nd4j.create(
+					new double[]{0.3353434, 1.35343, 0.11423, 1.252325, 0.15235, 3.53434 }, new int[]{6, 1}), false)
+			);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void run(List<BemsEnergyAnalysisData> analysisDataList, String filename) throws IOException {
+		String filePath = "../shared/" + filename;
+
+	    if (analysisDataList == null) {
+			logger.info("Analysis data is null");
+			return;
+		}
+
+		DataSetIterator dataIterator = getTrainingData(analysisDataList);
+		if (dataIterator == null)
 			return;
 
 		final MultiLayerNetwork net = createMultiLayerNetwork();
@@ -147,8 +165,11 @@ public class EnergyFeedForwardService {
 		net.setListeners(new ScoreIterationListener(1));
 
 		for (int i = 0; i < nEpochs; i++) {
-			iterator.reset();
-			net.fit(iterator);
+			dataIterator.reset();
+			net.fit(dataIterator);
 		}
+
+		saveMultiLayerNetwork(net, filePath);
+		testMultiLayerNetwork(filePath);
 	}
 }
