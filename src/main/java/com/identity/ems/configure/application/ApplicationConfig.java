@@ -13,16 +13,6 @@ class ApplicationConfig {
 	private ApplicationProperties applicationProperties;
 
 	@Bean
-	public int limitRangeMinValue() {
-		return applicationProperties.getLimitRangeMinValue();
-	}
-
-	@Bean
-	public int limitRangeMaxValue() {
-		return applicationProperties.getLimitRangeMaxValue();
-	}
-
-	@Bean
 	public int calendarAddMinute() {
 		return applicationProperties.getCalendarAddMinute();
 	}

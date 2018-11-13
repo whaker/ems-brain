@@ -21,17 +21,9 @@ import javax.annotation.Resource;
 public class BemsBrainApplication {
 	private static final Logger logger = LoggerFactory.getLogger(BemsBrainApplication.class);
 
-	@Resource
-	int limitRangeMinValue;
-
-	@Resource
-	int limitRangeMaxValue;
-
 	@PostConstruct
 	public void started() {
-		logger.info("Point value limit range min : {}", limitRangeMinValue);
-		logger.info("Point value limit range max : {}", limitRangeMaxValue);
-		logger.info("BEMS Analysis Process Started");
+		logger.info("BEMS Brain Process Started");
 	}
 
 	@Bean
